@@ -11,8 +11,8 @@ def main():
     parser.add_argument(
         '--repo-slug',
         type=str,
-        default='<owner>/swipeaerospace-extended',
-        help='GitHub owner/repo slug for releases and homepage (e.g. bryan/swipeaerospace-extended)'
+        default='btninja/SwipeAerospaceExt',
+        help='GitHub owner/repo slug for releases and homepage'
     )
     args = parser.parse_args()
 

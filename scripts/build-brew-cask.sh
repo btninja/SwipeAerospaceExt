@@ -5,7 +5,7 @@ zip_uri='' # mandatory
 cask_name='swipeaerospace-extended'
 build_version="0.0.0-SNAPSHOT"
 app_bundle_dir_name='SwipeAeroSpaceExtended.app'
-homepage_url='https://github.com/<owner>/swipeaerospace-extended' # override with --homepage
+homepage_url='https://github.com/btninja/SwipeAerospaceExt' # override with --homepage
 while test $# -gt 0; do
     case $1 in
         --build-version) build_version="$2"; shift 2;;
