@@ -20,6 +20,24 @@ class OverlayState: ObservableObject {
     @Published var workspaces: [WorkspaceInfo] = []
     @Published var visible: Bool = false
     @Published var focusedMonitorId: String? = nil
+    @Published var toastLabel: String? = nil
+    @Published var toastVisible: Bool = false
+}
+
+struct GestureToastView: View {
+    @ObservedObject var state: OverlayState
+
+    var body: some View {
+        if state.toastVisible, let label = state.toastLabel {
+            Text(label)
+                .font(.system(size: 14, weight: .medium))
+                .padding(.horizontal, 16)
+                .padding(.vertical, 10)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
+                .shadow(radius: 8)
+                .transition(.opacity)
+        }
+    }
 }
 
 struct WorkspaceOverlayView: View {
@@ -245,6 +263,10 @@ class OverlayPanelController {
     private var onSelectCallback: ((String) -> Void)?
     private let overlayState = OverlayState()
 
+    private var toastPanel: NSPanel?
+    private var toastDismissWork: DispatchWorkItem?
+    private let toastSize = NSSize(width: 220, height: 50)
+
     func show(
         workspaces: [WorkspaceInfo],
         focusedMonitorId: String? = nil,
@@ -362,6 +384,69 @@ class OverlayPanelController {
 
     func update(workspaces: [WorkspaceInfo]) {
         overlayState.workspaces = workspaces
+    }
+
+    /// Pop a small bottom-center toast for per-gesture feedback.
+    /// Safe to call from any thread; UI work is dispatched to main internally.
+    /// Repeat calls during one gesture refresh the visible toast and reset
+    /// the dismiss timer rather than stacking.
+    func showToast(label: String, duration: TimeInterval = 0.8) {
+        DispatchQueue.main.async { [weak self] in
+            self?.presentToast(label: label, duration: duration)
+        }
+    }
+
+    private func presentToast(label: String, duration: TimeInterval) {
+        toastDismissWork?.cancel()
+
+        // Anchor on the screen under the cursor — matches overview HUD behavior
+        // and keeps feedback on the user's active monitor.
+        let mouseLocation = NSEvent.mouseLocation
+        let screen = NSScreen.screens.first(where: {
+            NSPointInRect(mouseLocation, $0.frame)
+        }) ?? NSScreen.main ?? NSScreen.screens.first!
+        let screenFrame = screen.visibleFrame
+        let origin = NSPoint(
+            x: screenFrame.midX - toastSize.width / 2,
+            y: screenFrame.minY + 80
+        )
+
+        if toastPanel == nil {
+            let panel = NSPanel(
+                contentRect: NSRect(origin: origin, size: toastSize),
+                styleMask: [.borderless, .nonactivatingPanel],
+                backing: .buffered,
+                defer: false
+            )
+            panel.level = .screenSaver
+            panel.isOpaque = false
+            panel.backgroundColor = .clear
+            panel.hasShadow = false
+            panel.ignoresMouseEvents = true
+            panel.contentView = NSHostingView(rootView: GestureToastView(state: overlayState))
+            toastPanel = panel
+        }
+        toastPanel?.setFrame(NSRect(origin: origin, size: toastSize), display: true)
+
+        overlayState.toastLabel = label
+        withAnimation(.easeOut(duration: 0.12)) {
+            overlayState.toastVisible = true
+        }
+        toastPanel?.orderFront(nil)
+
+        let work = DispatchWorkItem { [weak self] in
+            guard let self = self else { return }
+            withAnimation(.easeIn(duration: 0.18)) {
+                self.overlayState.toastVisible = false
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
+                if self?.overlayState.toastVisible == false {
+                    self?.toastPanel?.orderOut(nil)
+                }
+            }
+        }
+        toastDismissWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + duration, execute: work)
     }
 
     func dismiss() {

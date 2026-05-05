@@ -511,9 +511,14 @@ class SwipeManager {
     }
 
     private func handleTap() {
+        showToast("Float toggle")
         workQueue.async { [weak self] in
             _ = self?.runCommand(args: ["layout", "floating", "tiling"], stdin: "")
         }
+    }
+
+    private func showToast(_ label: String) {
+        overlayController.showToast(label: label, duration: 0.8)
     }
 
     private func processTouches(touches: Set<NSTouch>, count: Int) {
@@ -552,11 +557,13 @@ class SwipeManager {
                     // fn + 3F DOWN -> close.
                     if !swipeUpFired && accDisY > threshold {
                         swipeUpFired = true
+                        showToast("fn ↑ Move to monitor")
                         workQueue.async { [weak self] in
                             _ = self?.runCommand(args: ["move-node-to-monitor", "next"], stdin: "")
                         }
                     } else if !swipeUpFired && accDisY < -threshold {
                         swipeUpFired = true
+                        showToast("fn ↓ Close")
                         workQueue.async { [weak self] in
                             _ = self?.runCommand(args: ["close"], stdin: "")
                         }
@@ -589,11 +596,13 @@ class SwipeManager {
                     // Fire-once-per-gesture; reset is handled in clearEventState().
                     if !swipeUpFired && accDisY > threshold {
                         swipeUpFired = true
+                        showToast("Monitor →")
                         workQueue.async { [weak self] in
                             _ = self?.runCommand(args: ["focus-monitor", "next"], stdin: "")
                         }
                     } else if !swipeUpFired && accDisY < -threshold {
                         swipeUpFired = true
+                        showToast("⇄")
                         workQueue.async { [weak self] in
                             _ = self?.runCommand(args: ["workspace-back-and-forth"], stdin: "")
                         }
@@ -609,6 +618,7 @@ class SwipeManager {
                     if accDisX > threshold {
                         let dir = naturalSwipe ? "prev" : "next"
                         fnHorizontalFired = true
+                        showToast(dir == "next" ? "fn → Move next" : "fn ← Move prev")
                         workQueue.async { [weak self] in
                             _ = self?.runCommand(
                                 args: ["move-node-to-workspace", "--wrap-around", dir],
@@ -618,6 +628,7 @@ class SwipeManager {
                     } else if accDisX < -threshold {
                         let dir = naturalSwipe ? "next" : "prev"
                         fnHorizontalFired = true
+                        showToast(dir == "next" ? "fn → Move next" : "fn ← Move prev")
                         workQueue.async { [weak self] in
                             _ = self?.runCommand(
                                 args: ["move-node-to-workspace", "--wrap-around", dir],
@@ -639,6 +650,7 @@ class SwipeManager {
                     } else {
                         direction = naturalSwipe ? .next : .prev
                     }
+                    showToast(direction == .next ? "Workspace →" : "Workspace ←")
                     let stepsToFire = abs(delta)
                     firedPosition = targetPosition
 
@@ -720,6 +732,7 @@ class SwipeManager {
             } else {
                 accDisX < 0 ? .prev : .next
             }
+        showToast(direction == .next ? "Workspace →" : "Workspace ←")
         workQueue.async { [weak self] in
             guard let self = self else { return }
             switch self.switchWorkspace(direction: direction) {
