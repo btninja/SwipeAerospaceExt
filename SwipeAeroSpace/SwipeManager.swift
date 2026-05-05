@@ -102,6 +102,14 @@ class SwipeManager {
     @AppStorage("maxSteps") private var maxSteps: Int = 5
     @AppStorage("swipeUpOverview") private var swipeUpOverviewEnabled: Bool = true
     @AppStorage("swipeUpFingers") private var swipeUpFingers: String = "Three"
+    @AppStorage("tap3Enabled") private var tap3Enabled: Bool = true
+
+    // Tap thresholds in normalized trackpad units (0..1) and seconds.
+    // Below internalThreshold * 0.3 the axis stays .undecided, so we treat
+    // the gesture as a stationary tap when both timing and motion are tight.
+    private var gestureStartTime: TimeInterval = 0
+    private let tapMaxDuration: TimeInterval = 0.2
+    private let tapMaxMovement: Float = 0.025
 
     var socketInfo = SocketInfo()
 
@@ -475,10 +483,28 @@ class SwipeManager {
     private func stopGesture() {
         if state == .began {
             state = .ended
+            let elapsed = ProcessInfo.processInfo.systemUptime - gestureStartTime
+            let totalMovement: Float = hypot(accDisX, accDisY)
+            if tap3Enabled
+                && activeFingerCount == 3
+                && swipeAxis == .undecided
+                && elapsed < tapMaxDuration
+                && totalMovement < tapMaxMovement
+            {
+                handleTap()
+                clearEventState()
+                return
+            }
             if swipeAxis != .vertical {
                 handleGesture()
             }
             clearEventState()
+        }
+    }
+
+    private func handleTap() {
+        workQueue.async { [weak self] in
+            _ = self?.runCommand(args: ["layout", "floating", "tiling"], stdin: "")
         }
     }
 
@@ -488,6 +514,7 @@ class SwipeManager {
         if state != .began && (count == hFingerCount || count == vFingerCount) {
             state = .began
             activeFingerCount = count
+            gestureStartTime = ProcessInfo.processInfo.systemUptime
         }
         // Update finger count while axis is still undecided — touch count
         // can fluctuate as fingers land, so use the latest stable count

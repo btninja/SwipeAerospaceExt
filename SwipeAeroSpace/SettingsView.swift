@@ -10,6 +10,7 @@ struct SettingsView: View {
     @AppStorage("maxSteps") private var maxSteps: Int = 5
     @AppStorage("swipeUpOverview") private var swipeUpOverviewEnabled: Bool = true
     @AppStorage("swipeUpFingers") private var swipeUpFingers: String = "Three"
+    @AppStorage("tap3Enabled") private var tap3Enabled: Bool = true
 
     @State private var numberFormatter: NumberFormatter = {
         var nf = NumberFormatter()
@@ -153,6 +154,22 @@ struct SettingsView: View {
                         .pickerStyle(.segmented)
                         .frame(maxWidth: 140)
                     }
+                }
+            }
+            .padding(.horizontal, 32)
+            .padding(.bottom, 16)
+
+            sectionDivider()
+
+            // MARK: - Tap
+            sectionHeader("Tap")
+            VStack(alignment: .leading, spacing: 12) {
+                settingRow(
+                    title: "3-Finger Tap Toggles Floating",
+                    description: "A short stationary 3-finger tap toggles the focused window between floating and tiling layouts."
+                ) {
+                    Toggle("", isOn: $tap3Enabled)
+                        .labelsHidden()
                 }
             }
             .padding(.horizontal, 32)
