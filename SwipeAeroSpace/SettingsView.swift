@@ -11,6 +11,7 @@ struct SettingsView: View {
     @AppStorage("swipeUpOverview") private var swipeUpOverviewEnabled: Bool = true
     @AppStorage("swipeUpFingers") private var swipeUpFingers: String = "Three"
     @AppStorage("tap3Enabled") private var tap3Enabled: Bool = true
+    @AppStorage("fnSwipesEnabled") private var fnSwipesEnabled: Bool = true
 
     @State private var numberFormatter: NumberFormatter = {
         var nf = NumberFormatter()
@@ -169,6 +170,22 @@ struct SettingsView: View {
                     description: "A short stationary 3-finger tap toggles the focused window between floating and tiling layouts."
                 ) {
                     Toggle("", isOn: $tap3Enabled)
+                        .labelsHidden()
+                }
+            }
+            .padding(.horizontal, 32)
+            .padding(.bottom, 16)
+
+            sectionDivider()
+
+            // MARK: - Modifier Swipes
+            sectionHeader("Modifier Swipes")
+            VStack(alignment: .leading, spacing: 12) {
+                settingRow(
+                    title: "Hold fn to Move Windows",
+                    description: "fn + 3F left/right moves the focused window to the prev/next workspace. fn + 3F up moves it to the next monitor. fn + 3F down closes it."
+                ) {
+                    Toggle("", isOn: $fnSwipesEnabled)
                         .labelsHidden()
                 }
             }

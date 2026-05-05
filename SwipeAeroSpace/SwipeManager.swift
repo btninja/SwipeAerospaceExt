@@ -103,6 +103,7 @@ class SwipeManager {
     @AppStorage("swipeUpOverview") private var swipeUpOverviewEnabled: Bool = true
     @AppStorage("swipeUpFingers") private var swipeUpFingers: String = "Three"
     @AppStorage("tap3Enabled") private var tap3Enabled: Bool = true
+    @AppStorage("fnSwipesEnabled") private var fnSwipesEnabled: Bool = true
 
     // Tap thresholds in normalized trackpad units (0..1) and seconds.
     // Below internalThreshold * 0.3 the axis stays .undecided, so we treat
@@ -110,6 +111,12 @@ class SwipeManager {
     private var gestureStartTime: TimeInterval = 0
     private let tapMaxDuration: TimeInterval = 0.2
     private let tapMaxMovement: Float = 0.025
+
+    // fn-swipe state. Captured once per gesture at .began so the modifier
+    // doesn't flicker mid-swipe. fnHorizontalFired enforces fire-once-per-
+    // gesture (move-node-to-workspace shouldn't repeat with multiSwipe).
+    private var modifierFnAtGestureStart: Bool = false
+    private var fnHorizontalFired: Bool = false
 
     var socketInfo = SocketInfo()
 
@@ -490,6 +497,7 @@ class SwipeManager {
                 && swipeAxis == .undecided
                 && elapsed < tapMaxDuration
                 && totalMovement < tapMaxMovement
+                && !modifierFnAtGestureStart
             {
                 handleTap()
                 clearEventState()
@@ -515,6 +523,7 @@ class SwipeManager {
             state = .began
             activeFingerCount = count
             gestureStartTime = ProcessInfo.processInfo.systemUptime
+            modifierFnAtGestureStart = NSEvent.modifierFlags.contains(.function)
         }
         // Update finger count while axis is still undecided — touch count
         // can fluctuate as fingers land, so use the latest stable count
@@ -535,10 +544,24 @@ class SwipeManager {
                 }
             }
 
-            // Vertical swipes: route to overview HUD (legacy) or direct commands.
+            // Vertical swipes: fn (window ops) > overview HUD (legacy) > direct commands.
             if swipeAxis == .vertical && activeFingerCount == vFingerCount {
                 let threshold = internalThreshold * 0.5
-                if swipeUpOverviewEnabled {
+                if modifierFnAtGestureStart && fnSwipesEnabled {
+                    // fn + 3F UP -> move-node-to-monitor next.
+                    // fn + 3F DOWN -> close.
+                    if !swipeUpFired && accDisY > threshold {
+                        swipeUpFired = true
+                        workQueue.async { [weak self] in
+                            _ = self?.runCommand(args: ["move-node-to-monitor", "next"], stdin: "")
+                        }
+                    } else if !swipeUpFired && accDisY < -threshold {
+                        swipeUpFired = true
+                        workQueue.async { [weak self] in
+                            _ = self?.runCommand(args: ["close"], stdin: "")
+                        }
+                    }
+                } else if swipeUpOverviewEnabled {
                     if !swipeUpFired && accDisY > threshold {
                         swipeUpFired = true
                         if !overlayController.isVisible {
@@ -578,8 +601,32 @@ class SwipeManager {
                 }
             }
 
-            // Only fire horizontal workspace switches for horizontal swipes
-            if swipeAxis == .horizontal && multiSwipeEnabled {
+            // Horizontal swipes: fn (move window) > multiSwipe (live workspace switch).
+            // Non-multi branch (no fn, multiSwipe off) is handled in handleGesture().
+            if swipeAxis == .horizontal && modifierFnAtGestureStart && fnSwipesEnabled {
+                let threshold = internalThreshold
+                if !fnHorizontalFired {
+                    if accDisX > threshold {
+                        let dir = naturalSwipe ? "prev" : "next"
+                        fnHorizontalFired = true
+                        workQueue.async { [weak self] in
+                            _ = self?.runCommand(
+                                args: ["move-node-to-workspace", "--wrap-around", dir],
+                                stdin: ""
+                            )
+                        }
+                    } else if accDisX < -threshold {
+                        let dir = naturalSwipe ? "next" : "prev"
+                        fnHorizontalFired = true
+                        workQueue.async { [weak self] in
+                            _ = self?.runCommand(
+                                args: ["move-node-to-workspace", "--wrap-around", dir],
+                                stdin: ""
+                            )
+                        }
+                    }
+                }
+            } else if swipeAxis == .horizontal && multiSwipeEnabled {
                 let threshold = internalThreshold
                 let rawPosition = Int(accDisX / threshold)
                 let targetPosition = max(-maxSteps, min(maxSteps, rawPosition))
@@ -646,6 +693,7 @@ class SwipeManager {
         accDisY = 0
         firedPosition = 0
         swipeUpFired = false
+        fnHorizontalFired = false
         swipeAxis = .undecided
         activeFingerCount = 0
         gestureFocusDone = false
@@ -655,6 +703,11 @@ class SwipeManager {
     private func handleGesture() {
         // If multi-swipe is enabled, switches already fired live during the gesture
         if multiSwipeEnabled {
+            return
+        }
+        // fn was held — fn-swipe path already fired (or chose not to) mid-gesture;
+        // never fall back to a regular workspace switch when the user held fn.
+        if modifierFnAtGestureStart && fnSwipesEnabled {
             return
         }
         let threshold = internalThreshold
