@@ -40,6 +40,15 @@ struct SwipeAeroSpaceApp: App {
     @State var swipeManager = SwipeManager()
 
     init() {
+        // One-time migration: upstream defaults swipeUpOverview to true and binds
+        // 3F UP to the overview HUD. This fork rebinds 3F UP to focus-monitor next,
+        // so flip the toggle off on first launch. The user can re-enable via Settings;
+        // the flag ensures we don't keep flipping it back on every relaunch.
+        let defaults = UserDefaults.standard
+        if !defaults.bool(forKey: "migratedOverviewToggle") {
+            defaults.set(false, forKey: "swipeUpOverview")
+            defaults.set(true, forKey: "migratedOverviewToggle")
+        }
         checkAccessibilityPermissions()
         swipeManager.start()
     }

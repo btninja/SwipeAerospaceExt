@@ -508,31 +508,45 @@ class SwipeManager {
                 }
             }
 
-            // Vertical swipes: only fire if finger count matches overview setting
-            if swipeAxis == .vertical && swipeUpOverviewEnabled
-                && activeFingerCount == vFingerCount
-            {
+            // Vertical swipes: route to overview HUD (legacy) or direct commands.
+            if swipeAxis == .vertical && activeFingerCount == vFingerCount {
                 let threshold = internalThreshold * 0.5
-                if !swipeUpFired && accDisY > threshold {
-                    swipeUpFired = true
-                    if !overlayController.isVisible {
-                        showWorkspaceOverview()
+                if swipeUpOverviewEnabled {
+                    if !swipeUpFired && accDisY > threshold {
+                        swipeUpFired = true
+                        if !overlayController.isVisible {
+                            showWorkspaceOverview()
+                        }
                     }
-                }
-                // Mid-gesture: swipe back down dismisses when accDisY reverses
-                if swipeUpFired && accDisY < threshold * 0.5 {
-                    swipeUpFired = false
-                    DispatchQueue.main.async { [weak self] in
-                        self?.overlayController.dismiss()
+                    // Mid-gesture: swipe back down dismisses when accDisY reverses
+                    if swipeUpFired && accDisY < threshold * 0.5 {
+                        swipeUpFired = false
+                        DispatchQueue.main.async { [weak self] in
+                            self?.overlayController.dismiss()
+                        }
                     }
-                }
-                // New gesture: swipe down dismisses if overlay is already open
-                if !swipeUpFired && accDisY < -threshold
-                    && overlayController.isVisible
-                {
-                    swipeUpFired = true
-                    DispatchQueue.main.async { [weak self] in
-                        self?.overlayController.dismiss()
+                    // New gesture: swipe down dismisses if overlay is already open
+                    if !swipeUpFired && accDisY < -threshold
+                        && overlayController.isVisible
+                    {
+                        swipeUpFired = true
+                        DispatchQueue.main.async { [weak self] in
+                            self?.overlayController.dismiss()
+                        }
+                    }
+                } else {
+                    // 3F UP -> focus next monitor. 3F DOWN -> workspace-back-and-forth.
+                    // Fire-once-per-gesture; reset is handled in clearEventState().
+                    if !swipeUpFired && accDisY > threshold {
+                        swipeUpFired = true
+                        workQueue.async { [weak self] in
+                            _ = self?.runCommand(args: ["focus-monitor", "next"], stdin: "")
+                        }
+                    } else if !swipeUpFired && accDisY < -threshold {
+                        swipeUpFired = true
+                        workQueue.async { [weak self] in
+                            _ = self?.runCommand(args: ["workspace-back-and-forth"], stdin: "")
+                        }
                     }
                 }
             }

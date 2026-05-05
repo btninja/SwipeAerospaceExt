@@ -129,12 +129,14 @@ struct SettingsView: View {
 
             sectionDivider()
 
-            // MARK: - Workspace Overview
-            sectionHeader("Workspace Overview")
+            // MARK: - Vertical Swipe
+            sectionHeader("Vertical Swipe")
             VStack(alignment: .leading, spacing: 12) {
                 settingRow(
-                    title: "Enable Overview",
-                    description: "Swipe up to see all workspaces and their apps"
+                    title: "Show Workspace Overview",
+                    description: swipeUpOverviewEnabled
+                        ? "Swipe up to see all workspaces and their apps."
+                        : "Off: swipe up focuses the next monitor; swipe down toggles back-and-forth between workspaces."
                 ) {
                     Toggle("", isOn: $swipeUpOverviewEnabled)
                         .labelsHidden()
