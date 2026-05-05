@@ -6,16 +6,23 @@ import argparse
 
 def main():
     # Parse command line arguments
-    parser = argparse.ArgumentParser(description='Build brew cask for SwipeAeroSpace')
+    parser = argparse.ArgumentParser(description='Build brew cask for SwipeAeroSpaceExtended')
     parser.add_argument('--build-version', type=str, required=True, help='Build version')
+    parser.add_argument(
+        '--repo-slug',
+        type=str,
+        default='<owner>/swipeaerospace-extended',
+        help='GitHub owner/repo slug for releases and homepage (e.g. bryan/swipeaerospace-extended)'
+    )
     args = parser.parse_args()
-    
-    
+
+
     # Default values
-    cask_name = 'swipeaerospace'
+    cask_name = 'swipeaerospace-extended'
     cask_version = args.build_version
-    app_bundle_dir_name = 'SwipeAeroSpace.app'
-    zip_uri = f"https://github.com/MediosZ/SwipeAeroSpace/releases/download/{cask_version}/SwipeAeroSpace.zip"
+    app_bundle_dir_name = 'SwipeAeroSpaceExtended.app'
+    repo_slug = args.repo_slug
+    zip_uri = f"https://github.com/{repo_slug}/releases/download/{cask_version}/SwipeAeroSpaceExtended.zip"
 
     # Process ZIP file
     zip_file = ''
@@ -30,7 +37,7 @@ def main():
     else:
         sys.stderr.write(f"{zip_uri} doesn't exist\n")
         sys.exit(1)
-    
+
     # Calculate SHA256
     sha = subprocess.check_output(['shasum', '-a', '256', zip_file]).decode('utf-8').split()[0]
 
@@ -39,10 +46,10 @@ def main():
   version "{cask_version}"
   sha256 "{sha}"
 
-  url "https://github.com/MediosZ/SwipeAeroSpace/releases/download/#{{version}}/SwipeAeroSpace.zip"
-  name "SwipeAeroSpace"
-  desc "SwipeAeroSpace is a tool to switch AeroSpace worksapces by swiping."
-  homepage "https://github.com/MediosZ/SwipeAeroSpace"
+  url "https://github.com/{repo_slug}/releases/download/#{{version}}/SwipeAeroSpaceExtended.zip"
+  name "SwipeAeroSpaceExtended"
+  desc "Fork of SwipeAeroSpace that adds 3F UP/DOWN, 3F tap, and fn+3F gestures for AeroSpace."
+  homepage "https://github.com/{repo_slug}"
 
   depends_on macos: ">= :ventura" # macOS 13
 
@@ -53,7 +60,7 @@ def main():
   app "{app_bundle_dir_name}"
 end
 """
-    
+
     with open(f"{cask_name}.rb", "w") as f:
         f.write(cask_template)
 
