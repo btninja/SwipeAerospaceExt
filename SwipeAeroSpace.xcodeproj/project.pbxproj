@@ -270,7 +270,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = SwipeAeroSpace;
+				INFOPLIST_KEY_CFBundleDisplayName = SwipeAeroSpaceExtended;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "©Tricster";
@@ -280,8 +280,8 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.5;
 				MARKETING_VERSION = 0.3.0;
-				PRODUCT_BUNDLE_IDENTIFIER = club.mediosz.SwipeAeroSpace;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = club.bryan.SwipeAeroSpaceExtended;
+				PRODUCT_NAME = SwipeAeroSpaceExtended;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 			};
@@ -302,7 +302,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_CFBundleDisplayName = SwipeAeroSpace;
+				INFOPLIST_KEY_CFBundleDisplayName = SwipeAeroSpaceExtended;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.developer-tools";
 				INFOPLIST_KEY_LSUIElement = YES;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "©Tricster";
@@ -312,8 +312,8 @@
 				);
 				MACOSX_DEPLOYMENT_TARGET = 13.5;
 				MARKETING_VERSION = 0.3.0;
-				PRODUCT_BUNDLE_IDENTIFIER = club.mediosz.SwipeAeroSpace;
-				PRODUCT_NAME = "$(TARGET_NAME)";
+				PRODUCT_BUNDLE_IDENTIFIER = club.bryan.SwipeAeroSpaceExtended;
+				PRODUCT_NAME = SwipeAeroSpaceExtended;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 			};

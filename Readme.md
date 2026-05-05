@@ -3,51 +3,33 @@
 
 # About
 
-Swipe with three fingers to change AeroSpace workspaces. This can be a single purpose alternative to Better Touch Tool.
+**SwipeAeroSpaceExtended** is a fork of [MediosZ/SwipeAeroSpace](https://github.com/MediosZ/SwipeAeroSpace) that adds extra 3-finger gestures for AeroSpace. It runs alongside the upstream app (different bundle ID), so you can keep both installed while migrating.
+
+The base behavior — 3-finger swipe LEFT/RIGHT to change AeroSpace workspaces — comes from upstream. This fork adds 3F UP/DOWN, 3F tap, and fn-modified 3F swipes for window movement, monitor focus, and close. See `SPEC.md` for the full gesture set.
 
 # Installation
 
-You can either download the pre-built binary (built with github actions) or build it from source.
+Build from source until a Homebrew cask is published.
 
-## Homebrew
+## Build from source
 
-The easiest way to install is to use Homebrew:
+Install Xcode, then either:
 
-```bash
-brew install --cask mediosz/tap/swipeaerospace
-```
+- Open `SwipeAeroSpace.xcodeproj` and build the `SwipeAeroSpace` scheme. The output is `SwipeAeroSpaceExtended.app`.
+- Or run `xcodebuild -project SwipeAeroSpace.xcodeproj -scheme SwipeAeroSpace -configuration Release` from the project root.
 
-## Download pre-built binary
+The app needs access to global trackpad events. Grant `SwipeAeroSpaceExtended` access in `System Settings > Privacy & Security > Accessibility`.
 
-First, Download the latest `SwipeAeroSpace.dmg` from [Releases](https://github.com/MediosZ/SwipeAeroSpace/releases) page.
+# Usage
 
-But it can’t be opened because Apple cannot check it for malicious software.
-
-There are two options:
-
-- You may right-click the app and click Open and click Open again, or you could goto `System Settings > Privacy & Security > Security` and select `Open Anyway`.
-- You could use `xattr -d com.apple.quarantine /path/to/SwipeAeroSpace.app` to remove the constraint.
-
-The app needs access to global trackpad events. Allow `SwipeAeroSpace` to control your computer in `System Settings > Privacy & Security > Accessibility`.
-
-## Build from source 
-
-First install Xcode, then there are two options:
-
-- Open `SwipeAeroSpace.xcodeproj` to build the project and export the app.
-- Or you can use `xcodebuild` directly to build and export the app.
-
-
-# Usage 
-
-After properly installation, you can use the 3-finger swipe to switch between AeroSpace workspaces.
+After installation, use 3-finger gestures to navigate AeroSpace. See `SPEC.md` for the full mapping.
 
 # License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+MIT — see the `LICENSE` file. Same license as upstream.
 
 # Acknowledgement
 
-Big thanks to [Touch-Tab](https://github.com/ris58h/Touch-Tab).
+This project is a fork of [MediosZ/SwipeAeroSpace](https://github.com/MediosZ/SwipeAeroSpace). All the multitouch + socket-RPC heavy lifting is upstream's work; this fork adds gestures and a toast HUD on top.
 
-
+Upstream credits [Touch-Tab](https://github.com/ris58h/Touch-Tab).

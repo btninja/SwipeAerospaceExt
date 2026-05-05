@@ -26,7 +26,7 @@ func checkAccessibilityPermissions() {
         _ = try? Process.run(
             URL(filePath: "/usr/bin/tccutil"),
             arguments: [
-                "reset", "Accessibility", "club.mediosz.SwipeAeroSpace",
+                "reset", "Accessibility", "club.bryan.SwipeAeroSpaceExtended",
             ]
         )
         NSApplication.shared.terminate(nil)

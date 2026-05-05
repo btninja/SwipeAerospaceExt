@@ -1,4 +1,4 @@
-name: Distribute SwipeAeroSpace
+name: Distribute SwipeAeroSpaceExtended
 
 on:
   push:
@@ -22,25 +22,25 @@ jobs:
 
       - name: Make Release Dmg
         run: |
-          hdiutil create temp.dmg -ov -volname "SwipeAeroSpace" -fs HFS+ -srcfolder "build/Build/Products/Release/SwipeAeroSpace.app"
-          hdiutil convert temp.dmg -format UDZO -o "SwipeAeroSpace.dmg"
+          hdiutil create temp.dmg -ov -volname "SwipeAeroSpaceExtended" -fs HFS+ -srcfolder "build/Build/Products/Release/SwipeAeroSpaceExtended.app"
+          hdiutil convert temp.dmg -format UDZO -o "SwipeAeroSpaceExtended.dmg"
 
       - name: Make Release Zip
         run: |
-          cp -r "build/Build/Products/Release/SwipeAeroSpace.app" "SwipeAeroSpace.app"
-          zip -r "SwipeAeroSpace.zip" "SwipeAeroSpace.app"
+          cp -r "build/Build/Products/Release/SwipeAeroSpaceExtended.app" "SwipeAeroSpaceExtended.app"
+          zip -r "SwipeAeroSpaceExtended.zip" "SwipeAeroSpaceExtended.app"
 
       - name: Upload a Build Artifact
         id: upload_artifact
         uses: actions/upload-artifact@v4
         with:
-          name: SwipeAeroSpace
-          path: "SwipeAeroSpace.dmg"
+          name: SwipeAeroSpaceExtended
+          path: "SwipeAeroSpaceExtended.dmg"
 
       - name: Release to GitHub
         uses: softprops/action-gh-release@v2
         with:
           token: ${{ secrets.CUSTOM_GITHUB_TOKEN }}
           files: |
-            SwipeAeroSpace.dmg
-            SwipeAeroSpace.zip
+            SwipeAeroSpaceExtended.dmg
+            SwipeAeroSpaceExtended.zip
