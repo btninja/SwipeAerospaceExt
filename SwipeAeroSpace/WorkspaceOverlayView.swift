@@ -22,6 +22,32 @@ class OverlayState: ObservableObject {
     @Published var focusedMonitorId: String? = nil
     @Published var toastLabel: String? = nil
     @Published var toastVisible: Bool = false
+    @Published var chevronText: String? = nil
+    @Published var chevronVisible: Bool = false
+}
+
+struct GestureChevronView: View {
+    @ObservedObject var state: OverlayState
+
+    var body: some View {
+        if state.chevronVisible, let text = state.chevronText {
+            Text(text)
+                .font(.system(size: 28, weight: .semibold))
+                .padding(.horizontal, 24)
+                .padding(.vertical, 14)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 18))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 18)
+                        .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
+                )
+                .shadow(color: .black.opacity(0.18), radius: 14, x: 0, y: 6)
+                .shadow(color: .black.opacity(0.12), radius: 1, x: 0, y: 1)
+                .transition(.asymmetric(
+                    insertion: .scale(scale: 0.82).combined(with: .opacity),
+                    removal: .opacity
+                ))
+        }
+    }
 }
 
 struct GestureToastView: View {
@@ -275,6 +301,9 @@ class OverlayPanelController {
     private var toastDismissWork: DispatchWorkItem?
     private let toastSize = NSSize(width: 220, height: 50)
 
+    private var chevronPanel: NSPanel?
+    private let chevronSize = NSSize(width: 140, height: 70)
+
     func show(
         workspaces: [WorkspaceInfo],
         focusedMonitorId: String? = nil,
@@ -457,6 +486,67 @@ class OverlayPanelController {
         }
         toastDismissWork = work
         DispatchQueue.main.asyncAfter(deadline: .now() + duration, execute: work)
+    }
+
+    /// Show or update the gesture-tracking chevron during an active swipe.
+    /// Stays visible until hideChevron() is called. Anchored above the toast
+    /// position so the chevron→toast handoff at threshold-crossing reads as a
+    /// staircase rather than overlap.
+    func showChevron(text: String) {
+        DispatchQueue.main.async { [weak self] in
+            self?.presentChevron(text: text)
+        }
+    }
+
+    func hideChevron() {
+        DispatchQueue.main.async { [weak self] in
+            guard let self = self, self.overlayState.chevronVisible else { return }
+            withAnimation(.easeOut(duration: 0.16)) {
+                self.overlayState.chevronVisible = false
+            }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) { [weak self] in
+                if self?.overlayState.chevronVisible == false {
+                    self?.chevronPanel?.orderOut(nil)
+                }
+            }
+        }
+    }
+
+    private func presentChevron(text: String) {
+        let mouseLocation = NSEvent.mouseLocation
+        let screen = NSScreen.screens.first(where: {
+            NSPointInRect(mouseLocation, $0.frame)
+        }) ?? NSScreen.main ?? NSScreen.screens.first!
+        let screenFrame = screen.visibleFrame
+        let origin = NSPoint(
+            x: screenFrame.midX - chevronSize.width / 2,
+            y: screenFrame.minY + 160
+        )
+
+        if chevronPanel == nil {
+            let panel = NSPanel(
+                contentRect: NSRect(origin: origin, size: chevronSize),
+                styleMask: [.borderless, .nonactivatingPanel],
+                backing: .buffered,
+                defer: false
+            )
+            panel.level = .screenSaver
+            panel.isOpaque = false
+            panel.backgroundColor = .clear
+            panel.hasShadow = false
+            panel.ignoresMouseEvents = true
+            panel.contentView = NSHostingView(rootView: GestureChevronView(state: overlayState))
+            chevronPanel = panel
+        }
+        chevronPanel?.setFrame(NSRect(origin: origin, size: chevronSize), display: true)
+
+        overlayState.chevronText = text
+        if !overlayState.chevronVisible {
+            withAnimation(.spring(response: 0.28, dampingFraction: 0.72)) {
+                overlayState.chevronVisible = true
+            }
+            chevronPanel?.orderFront(nil)
+        }
     }
 
     func dismiss() {
