@@ -9,7 +9,7 @@ The base behavior — 3-finger swipe LEFT/RIGHT to change AeroSpace workspaces �
 
 # Gesture set
 
-All 9 gestures are 3-finger. fn-modified variants require a hardware fn key (or a Karabiner/Vial firmware mapping that produces a real fn modifier).
+All 9 gestures are 3-finger. ⌥-modified variants are triggered by holding the Option (⌥) key during the swipe.
 
 | Gesture            | AeroSpace command                                  | Default toast        |
 | ------------------ | -------------------------------------------------- | -------------------- |
@@ -18,10 +18,10 @@ All 9 gestures are 3-finger. fn-modified variants require a hardware fn key (or 
 | 3F swipe UP        | `focus-monitor next`                               | `Monitor →`          |
 | 3F swipe DOWN      | `workspace-back-and-forth`                         | `⇄`                  |
 | 3F tap             | `layout floating tiling`                           | `Float toggle`       |
-| fn + 3F LEFT       | `move-node-to-workspace --wrap-around prev`        | `fn ← Move prev`     |
-| fn + 3F RIGHT      | `move-node-to-workspace --wrap-around next`        | `fn → Move next`     |
-| fn + 3F UP         | `move-node-to-monitor next`                        | `fn ↑ Move to monitor` |
-| fn + 3F DOWN       | `close`                                            | `fn ↓ Close`         |
+| ⌥ + 3F LEFT        | `move-node-to-workspace --wrap-around prev`        | `⌥ ← Move prev`      |
+| ⌥ + 3F RIGHT       | `move-node-to-workspace --wrap-around next`        | `⌥ → Move next`      |
+| ⌥ + 3F UP          | `move-node-to-monitor next`                        | `⌥ ↑ Move to monitor` |
+| ⌥ + 3F DOWN        | `close`                                            | `⌥ ↓ Close`          |
 
 3F swipe UP can be reverted to the upstream workspace overview HUD by toggling **Show Workspace Overview** under **Vertical Swipe** in Settings. The overview code is preserved; this fork just disables the trigger by default so the slot is free for `focus-monitor next`.
 
@@ -34,7 +34,7 @@ Available under the menu bar icon → Settings.
 - **Horizontal Swipe** — sensitivity, finger count, natural direction, wrap, skip-empty, multi-workspace toggle, max steps per swipe.
 - **Vertical Swipe** — toggle the workspace overview HUD on. When off (default in this fork), 3F up/down trigger `focus-monitor` and `workspace-back-and-forth`.
 - **Tap** — enable 3-finger tap toggling between floating and tiling layouts.
-- **Modifier Swipes** — enable fn-modified 3F swipes for window-movement ops.
+- **Modifier Swipes** — enable ⌥-modified 3F swipes for window-movement ops.
 - **General** — Launch at Login.
 
 A one-time migration on first launch flips `swipeUpOverview` to false (gated by `migratedOverviewToggle` in UserDefaults) so users upgrading from upstream don't keep getting the overview on 3F up.

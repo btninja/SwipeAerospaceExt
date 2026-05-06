@@ -11,7 +11,7 @@ struct SettingsView: View {
     @AppStorage("swipeUpOverview") private var swipeUpOverviewEnabled: Bool = true
     @AppStorage("swipeUpFingers") private var swipeUpFingers: String = "Three"
     @AppStorage("tap3Enabled") private var tap3Enabled: Bool = true
-    @AppStorage("fnSwipesEnabled") private var fnSwipesEnabled: Bool = true
+    @AppStorage("optionSwipesEnabled") private var optionSwipesEnabled: Bool = true
 
     @State private var numberFormatter: NumberFormatter = {
         var nf = NumberFormatter()
@@ -182,10 +182,10 @@ struct SettingsView: View {
             sectionHeader("Modifier Swipes")
             VStack(alignment: .leading, spacing: 12) {
                 settingRow(
-                    title: "Hold fn to Move Windows",
-                    description: "fn + 3F left/right moves the focused window to the prev/next workspace. fn + 3F up moves it to the next monitor. fn + 3F down closes it."
+                    title: "Hold ⌥ to Move Windows",
+                    description: "⌥ + 3F left/right moves the focused window to the prev/next workspace. ⌥ + 3F up moves it to the next monitor. ⌥ + 3F down closes it."
                 ) {
-                    Toggle("", isOn: $fnSwipesEnabled)
+                    Toggle("", isOn: $optionSwipesEnabled)
                         .labelsHidden()
                 }
             }
