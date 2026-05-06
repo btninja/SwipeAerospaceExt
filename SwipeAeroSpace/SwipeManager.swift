@@ -426,11 +426,18 @@ class SwipeManager {
             return
         }
         logger.info("SwipeManager start")
+        // Tap gesture events for our handlers, plus scroll-wheel and swipe so
+        // we can swallow them while a 3F gesture is in progress. macOS emits
+        // both gesture and scroll/swipe streams during a 3F swipe; without
+        // this, the underlying app still receives momentum/back-forward.
+        let mask = NSEvent.EventTypeMask.gesture.rawValue
+            | NSEvent.EventTypeMask.scrollWheel.rawValue
+            | NSEvent.EventTypeMask.swipe.rawValue
         eventTap = CGEvent.tapCreate(
             tap: .cghidEventTap,
             place: .headInsertEventTap,
             options: .defaultTap,
-            eventsOfInterest: NSEvent.EventTypeMask.gesture.rawValue,
+            eventsOfInterest: mask,
             callback: { proxy, type, cgEvent, me in
                 let wrapper = Unmanaged<SwipeManager>.fromOpaque(me!)
                     .takeUnretainedValue()
@@ -472,6 +479,15 @@ class SwipeManager {
             let nsEvent = NSEvent(cgEvent: cgEvent)
         {
             touchEventHandler(nsEvent)
+        } else if eventType == .scrollWheel
+            || eventType.rawValue == NSEvent.EventType.swipe.rawValue
+        {
+            // While a 3F gesture is in progress, swallow scroll/swipe events so
+            // the underlying app doesn't also scroll the view or do its own
+            // back/forward navigation. Pass through otherwise (2F scrolls etc).
+            if state == .began && (activeFingerCount == 3 || activeFingerCount == 4) {
+                return nil
+            }
         } else if eventType == .tapDisabledByUserInput
             || eventType == .tapDisabledByTimeout
         {
