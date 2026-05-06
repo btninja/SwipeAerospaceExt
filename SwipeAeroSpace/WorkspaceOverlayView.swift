@@ -31,11 +31,19 @@ struct GestureToastView: View {
         if state.toastVisible, let label = state.toastLabel {
             Text(label)
                 .font(.system(size: 14, weight: .medium))
-                .padding(.horizontal, 16)
-                .padding(.vertical, 10)
-                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 12))
-                .shadow(radius: 8)
-                .transition(.opacity)
+                .padding(.horizontal, 18)
+                .padding(.vertical, 11)
+                .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14)
+                        .stroke(Color.white.opacity(0.08), lineWidth: 0.5)
+                )
+                .shadow(color: .black.opacity(0.18), radius: 14, x: 0, y: 6)
+                .shadow(color: .black.opacity(0.12), radius: 1, x: 0, y: 1)
+                .transition(.asymmetric(
+                    insertion: .scale(scale: 0.86).combined(with: .opacity),
+                    removal: .opacity
+                ))
         }
     }
 }
@@ -429,17 +437,19 @@ class OverlayPanelController {
         toastPanel?.setFrame(NSRect(origin: origin, size: toastSize), display: true)
 
         overlayState.toastLabel = label
-        withAnimation(.easeOut(duration: 0.12)) {
+        // Spring entrance for that Apple-bounce feel; quick easeOut on exit
+        // so the next gesture's toast can come in cleanly.
+        withAnimation(.spring(response: 0.32, dampingFraction: 0.72)) {
             overlayState.toastVisible = true
         }
         toastPanel?.orderFront(nil)
 
         let work = DispatchWorkItem { [weak self] in
             guard let self = self else { return }
-            withAnimation(.easeIn(duration: 0.18)) {
+            withAnimation(.easeOut(duration: 0.22)) {
                 self.overlayState.toastVisible = false
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) { [weak self] in
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.24) { [weak self] in
                 if self?.overlayState.toastVisible == false {
                     self?.toastPanel?.orderOut(nil)
                 }
