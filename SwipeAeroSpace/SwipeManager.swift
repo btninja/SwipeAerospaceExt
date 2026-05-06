@@ -128,10 +128,6 @@ class SwipeManager {
     private var modifierOptionAtGestureStart: Bool = false
     private var optHorizontalFired: Bool = false
 
-    // Chevron deduplication — processTouches fires 60+/sec; only push the
-    // controller when the displayed text actually changes.
-    private var lastChevronText: String?
-
     var socketInfo = SocketInfo()
 
     private var eventTap: CFMachPort? = nil
@@ -548,9 +544,6 @@ class SwipeManager {
     }
 
     private func showToast(_ label: String) {
-        // Action fired — chevron's job is done; hand off to the toast.
-        overlayController.hideChevron()
-        lastChevronText = nil
         overlayController.showToast(label: label, duration: 0.8)
     }
 
@@ -579,25 +572,6 @@ class SwipeManager {
                 if abs(accDisX) > threshold || abs(accDisY) > threshold {
                     swipeAxis =
                         abs(accDisY) > abs(accDisX) ? .vertical : .horizontal
-                }
-            }
-
-            // Chevron buildup indicator. Appears once axis locks and tracks
-            // the dominant direction. Deduped against lastChevronText to keep
-            // SwiftUI updates off the per-frame path. Hidden when an action
-            // fires (showToast handoff) or when the gesture clears.
-            if swipeAxis != .undecided {
-                let prefix = modifierOptionAtGestureStart ? "⌥ " : ""
-                let arrow: String
-                if swipeAxis == .horizontal {
-                    arrow = accDisX >= 0 ? "→" : "←"
-                } else {
-                    arrow = accDisY >= 0 ? "↑" : "↓"
-                }
-                let text = prefix + arrow
-                if text != lastChevronText {
-                    lastChevronText = text
-                    overlayController.showChevron(text: text)
                 }
             }
 
@@ -787,11 +761,6 @@ class SwipeManager {
         activeFingerCount = 0
         gestureFocusDone = false
         prevTouchPositions.removeAll()
-        // Hide chevron if it was shown but no action ever fired.
-        if lastChevronText != nil {
-            overlayController.hideChevron()
-            lastChevronText = nil
-        }
     }
 
     private func handleGesture() {
