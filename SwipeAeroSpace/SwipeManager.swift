@@ -102,8 +102,18 @@ class SwipeManager {
     @AppStorage("maxSteps") private var maxSteps: Int = 5
     @AppStorage("swipeUpOverview") private var swipeUpOverviewEnabled: Bool = true
     @AppStorage("swipeUpFingers") private var swipeUpFingers: String = "Three"
-    @AppStorage("tap3Enabled") private var tap3Enabled: Bool = true
-    @AppStorage("optionSwipesEnabled") private var optionSwipesEnabled: Bool = true
+    // Per-gesture enable/disable. Each defaults to true so out-of-the-box
+    // behavior matches the full gesture set; users disable individual ones
+    // they find disruptive.
+    @AppStorage("gestureLeftEnabled") private var gestureLeftEnabled: Bool = true
+    @AppStorage("gestureRightEnabled") private var gestureRightEnabled: Bool = true
+    @AppStorage("gestureUpEnabled") private var gestureUpEnabled: Bool = true
+    @AppStorage("gestureDownEnabled") private var gestureDownEnabled: Bool = true
+    @AppStorage("gestureTapEnabled") private var gestureTapEnabled: Bool = true
+    @AppStorage("gestureOptLeftEnabled") private var gestureOptLeftEnabled: Bool = true
+    @AppStorage("gestureOptRightEnabled") private var gestureOptRightEnabled: Bool = true
+    @AppStorage("gestureOptUpEnabled") private var gestureOptUpEnabled: Bool = true
+    @AppStorage("gestureOptDownEnabled") private var gestureOptDownEnabled: Bool = true
 
     // Tap thresholds in normalized trackpad units (0..1) and seconds.
     // Below internalThreshold * 0.3 the axis stays .undecided, so we treat
@@ -492,7 +502,7 @@ class SwipeManager {
             state = .ended
             let elapsed = ProcessInfo.processInfo.systemUptime - gestureStartTime
             let totalMovement: Float = hypot(accDisX, accDisY)
-            if tap3Enabled
+            if gestureTapEnabled
                 && activeFingerCount == 3
                 && swipeAxis == .undecided
                 && elapsed < tapMaxDuration
@@ -550,22 +560,29 @@ class SwipeManager {
             }
 
             // Vertical swipes: option (window ops) > overview HUD (legacy) > direct commands.
+            // Holding option ALWAYS routes to the option branch — individual
+            // gesture toggles gate command firing per direction. We never fall
+            // through from a disabled option-gesture to the non-option handler.
             if swipeAxis == .vertical && activeFingerCount == vFingerCount {
                 let threshold = internalThreshold * 0.5
-                if modifierOptionAtGestureStart && optionSwipesEnabled {
+                if modifierOptionAtGestureStart {
                     // ⌥ + 3F UP -> move-node-to-monitor next.
                     // ⌥ + 3F DOWN -> close.
                     if !swipeUpFired && accDisY > threshold {
                         swipeUpFired = true
-                        showToast("⌥ ↑ Move to monitor")
-                        workQueue.async { [weak self] in
-                            _ = self?.runCommand(args: ["move-node-to-monitor", "next"], stdin: "")
+                        if gestureOptUpEnabled {
+                            showToast("⌥ ↑ Move to monitor")
+                            workQueue.async { [weak self] in
+                                _ = self?.runCommand(args: ["move-node-to-monitor", "next"], stdin: "")
+                            }
                         }
                     } else if !swipeUpFired && accDisY < -threshold {
                         swipeUpFired = true
-                        showToast("⌥ ↓ Close")
-                        workQueue.async { [weak self] in
-                            _ = self?.runCommand(args: ["close"], stdin: "")
+                        if gestureOptDownEnabled {
+                            showToast("⌥ ↓ Close")
+                            workQueue.async { [weak self] in
+                                _ = self?.runCommand(args: ["close"], stdin: "")
+                            }
                         }
                     }
                 } else if swipeUpOverviewEnabled {
@@ -596,15 +613,19 @@ class SwipeManager {
                     // Fire-once-per-gesture; reset is handled in clearEventState().
                     if !swipeUpFired && accDisY > threshold {
                         swipeUpFired = true
-                        showToast("Monitor →")
-                        workQueue.async { [weak self] in
-                            _ = self?.runCommand(args: ["focus-monitor", "next"], stdin: "")
+                        if gestureUpEnabled {
+                            showToast("Monitor →")
+                            workQueue.async { [weak self] in
+                                _ = self?.runCommand(args: ["focus-monitor", "next"], stdin: "")
+                            }
                         }
                     } else if !swipeUpFired && accDisY < -threshold {
                         swipeUpFired = true
-                        showToast("⇄")
-                        workQueue.async { [weak self] in
-                            _ = self?.runCommand(args: ["workspace-back-and-forth"], stdin: "")
+                        if gestureDownEnabled {
+                            showToast("⇄")
+                            workQueue.async { [weak self] in
+                                _ = self?.runCommand(args: ["workspace-back-and-forth"], stdin: "")
+                            }
                         }
                     }
                 }
@@ -612,28 +633,34 @@ class SwipeManager {
 
             // Horizontal swipes: option (move window) > multiSwipe (live workspace switch).
             // Non-multi branch (no option, multiSwipe off) is handled in handleGesture().
-            if swipeAxis == .horizontal && modifierOptionAtGestureStart && optionSwipesEnabled {
+            if swipeAxis == .horizontal && modifierOptionAtGestureStart {
                 let threshold = internalThreshold
                 if !optHorizontalFired {
                     if accDisX > threshold {
                         let dir = naturalSwipe ? "prev" : "next"
                         optHorizontalFired = true
-                        showToast(dir == "next" ? "⌥ → Move next" : "⌥ ← Move prev")
-                        workQueue.async { [weak self] in
-                            _ = self?.runCommand(
-                                args: ["move-node-to-workspace", "--wrap-around", dir],
-                                stdin: ""
-                            )
+                        let enabled = dir == "next" ? gestureOptRightEnabled : gestureOptLeftEnabled
+                        if enabled {
+                            showToast(dir == "next" ? "⌥ → Move next" : "⌥ ← Move prev")
+                            workQueue.async { [weak self] in
+                                _ = self?.runCommand(
+                                    args: ["move-node-to-workspace", "--wrap-around", dir],
+                                    stdin: ""
+                                )
+                            }
                         }
                     } else if accDisX < -threshold {
                         let dir = naturalSwipe ? "next" : "prev"
                         optHorizontalFired = true
-                        showToast(dir == "next" ? "⌥ → Move next" : "⌥ ← Move prev")
-                        workQueue.async { [weak self] in
-                            _ = self?.runCommand(
-                                args: ["move-node-to-workspace", "--wrap-around", dir],
-                                stdin: ""
-                            )
+                        let enabled = dir == "next" ? gestureOptRightEnabled : gestureOptLeftEnabled
+                        if enabled {
+                            showToast(dir == "next" ? "⌥ → Move next" : "⌥ ← Move prev")
+                            workQueue.async { [weak self] in
+                                _ = self?.runCommand(
+                                    args: ["move-node-to-workspace", "--wrap-around", dir],
+                                    stdin: ""
+                                )
+                            }
                         }
                     }
                 }
@@ -650,12 +677,20 @@ class SwipeManager {
                     } else {
                         direction = naturalSwipe ? .next : .prev
                     }
-                    showToast(direction == .next ? "Workspace →" : "Workspace ←")
-                    let stepsToFire = abs(delta)
                     firedPosition = targetPosition
 
-                    // Cancel any pending work so we don't overshoot
+                    // Cancel any in-flight work — we either dispatch new work
+                    // below or the user moved into a disabled direction.
                     pendingSwipeWork?.cancel()
+
+                    let dirEnabled = direction == .next ? gestureRightEnabled : gestureLeftEnabled
+                    guard dirEnabled else {
+                        // Direction disabled by Settings — consume delta silently.
+                        return
+                    }
+
+                    showToast(direction == .next ? "Workspace →" : "Workspace ←")
+                    let stepsToFire = abs(delta)
 
                     let workItem = DispatchWorkItem { [weak self] in
                         guard let self = self else { return }
@@ -719,7 +754,7 @@ class SwipeManager {
         }
         // option was held — option-swipe path already fired (or chose not to) mid-gesture;
         // never fall back to a regular workspace switch when the user held option.
-        if modifierOptionAtGestureStart && optionSwipesEnabled {
+        if modifierOptionAtGestureStart {
             return
         }
         let threshold = internalThreshold
@@ -732,6 +767,8 @@ class SwipeManager {
             } else {
                 accDisX < 0 ? .prev : .next
             }
+        let dirEnabled = direction == .next ? gestureRightEnabled : gestureLeftEnabled
+        guard dirEnabled else { return }
         showToast(direction == .next ? "Workspace →" : "Workspace ←")
         workQueue.async { [weak self] in
             guard let self = self else { return }
